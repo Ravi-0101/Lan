@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:shelf_router/shelf_router.dart';
+import 'package:shelf_router/shelf_router.dart' as shelf_router;
 import 'package:uuid/uuid.dart';
 
 void main() => runApp(const LanFileServerApp());
