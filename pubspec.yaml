@@ -1,0 +1,27 @@
+name: lan_file_server
+description: Local network file server and client for Android and iOS.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shelf: ^1.4.2
+  shelf_router: ^1.1.4
+  dio: ^5.7.0
+  path_provider: ^2.1.5
+  file_picker: ^8.1.7
+  permission_handler: ^11.3.1
+  crypto: ^3.0.6
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
