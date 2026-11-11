@@ -45,3 +45,14 @@ jobs:
         with:
           name: LAN-File-Server-APK
           path: build/app/outputs/flutter-apk/app-release.apk
+
+        
+      - name: Check Flutter
+        run: flutter doctor -v
+
+      - name: Get dependencies
+        run: flutter pub get -v
+
+      - name: Build APK with detailed logs
+        run: flutter build apk --release -v
+
