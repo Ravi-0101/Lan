@@ -27,27 +27,6 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Configure Android SDK
-        shell: bash
-        run: |
-          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT}}"
-
-          echo "Android SDK: $SDK_ROOT"
-
-          SDKMANAGER=$(find "$SDK_ROOT/cmdline-tools" \
-            -type f -name sdkmanager | head -n 1)
-
-          if [ -z "$SDKMANAGER" ]; then
-            echo "sdkmanager not found"
-            exit 1
-          fi
-
-          yes | "$SDKMANAGER" --licenses || true
-
-          "$SDKMANAGER" \
-            "platforms;android-36" \
-            "build-tools;36.0.0"
-
       - name: Generate Android project
         run: |
           flutter create \
@@ -55,26 +34,87 @@ jobs:
             --org com.example \
             --project-name lan_file_server .
 
-      - name: Set compile SDK 36
-        shell: bash
+      - name: Install Android SDK 36
         run: |
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i \
-              's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' \
-              android/app/build.gradle.kts
-          elif [ -f android/app/build.gradle ]; then
-            sed -i \
-              's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/' \
-              android/app/build.gradle
-            sed -i \
-              's/compileSdk flutter.compileSdkVersion/compileSdk 36/' \
-              android/app/build.gradle
-          fi
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" \
+            -type f -name sdkmanager | head -n 1)
+
+          yes | "$SDKMANAGER" --licenses || true
+
+          "$SDKMANAGER" \
+            "platforms;android-36" \
+            "build-tools;36.0.0"
 
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Build Android APK
+      - name: Fix application compile SDK
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/app/build.gradle.kts")
+          if p.exists():
+              s = p.read_text()
+              s = s.replace(
+                  "compileSdk = flutter.compileSdkVersion",
+                  "compileSdk = 36"
+              )
+              p.write_text(s)
+          else:
+              p = Path("android/app/build.gradle")
+              s = p.read_text()
+              s = s.replace(
+                  "compileSdkVersion flutter.compileSdkVersion",
+                  "compileSdkVersion 36"
+              )
+              s = s.replace(
+                  "compileSdk flutter.compileSdkVersion",
+                  "compileSdk 36"
+              )
+              p.write_text(s)
+          PY
+
+      - name: Fix file_picker compile SDK
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path.home() / ".pub-cache" / "hosted" / "pub.dev"
+
+          files = list(root.glob("file_picker-*/android/build.gradle"))
+          files += list(root.glob("file_picker-*/android/build.gradle.kts"))
+
+          if not files:
+              raise SystemExit("file_picker Gradle file not found")
+
+          for p in files:
+              s = p.read_text()
+
+              s = re.sub(
+                  r'compileSdkVersion\s+34\b',
+                  'compileSdkVersion 36',
+                  s
+              )
+
+              s = re.sub(
+                  r'compileSdk\s*=\s*34\b',
+                  'compileSdk = 36',
+                  s
+              )
+
+              s = re.sub(
+                  r'compileSdk\s+34\b',
+                  'compileSdk 36',
+                  s
+              )
+
+              p.write_text(s)
+              print("Updated:", p)
+          PY
+
+      - name: Build APK
         run: flutter build apk --release
 
       - name: Upload APK
