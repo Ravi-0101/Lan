@@ -13,13 +13,16 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -27,12 +30,29 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Generate Android project files
+      - name: Generate Android project
         run: |
           flutter create \
             --platforms=android \
             --org com.example \
             --project-name lan_file_server .
+
+      - name: Install Android API 36
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set Android compile SDK 36
+        run: |
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' android/app/build.gradle.kts
+          elif [ -f android/app/build.gradle ]; then
+            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/' android/app/build.gradle
+            sed -i 's/compileSdk flutter.compileSdkVersion/compileSdk 36/' android/app/build.gradle
+          else
+            echo "Android app Gradle file not found"
+            exit 1
+          fi
 
       - name: Get dependencies
         run: flutter pub get
@@ -41,18 +61,7 @@ jobs:
         run: flutter build apk --release
 
       - name: Upload APK
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: LAN-File-Server-APK
           path: build/app/outputs/flutter-apk/app-release.apk
-
-        
-      - name: Check Flutter
-        run: flutter doctor -v
-
-      - name: Get dependencies
-        run: flutter pub get -v
-
-      - name: Build APK with detailed logs
-        run: flutter build apk --release -v
-
