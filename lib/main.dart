@@ -74,7 +74,7 @@ class _HomePageState extends State<HomePage> {
     setState(() => _busy = true);
     try {
       final dir = await _directory();
-      final router = Router();
+      final router = shelf_router.Router();
       final passwordHash = sha256.convert(utf8.encode(_password.text)).toString();
       final approvedTokens = <String>{};
 
